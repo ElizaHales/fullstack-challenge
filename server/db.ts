@@ -44,12 +44,19 @@ function initializeDatabase() {
   `
   ).run();
 
+  // Delete existing data
+  db.prepare('DELETE FROM deals;').run();
+  db.prepare('DELETE FROM accounts;').run();
+  db.prepare('DELETE FROM organizations;').run();
+
   // Seed Organizations
   db.prepare(`
     INSERT OR IGNORE INTO organizations (id, name) VALUES
     (1, 'New York Yankees'),
     (2, 'Boston Red Sox'),
-    (3, 'Los Angeles Dodgers');
+    (3, 'Los Angeles Dodgers'),
+    (4, 'Chicago Cubs'),
+    (5, 'San Francisco Giants');
   `).run();
 
   // Seed Accounts
@@ -60,18 +67,38 @@ function initializeDatabase() {
     (3, 1, 'Under Armour'),
     (4, 2, 'New Balance'),
     (5, 2, 'Bank of America'),
-    (6, 3, 'American Express');
+    (6, 3, 'American Express'),
+    (7, 3, 'Toyota'),
+    (8, 4, 'Budweiser'),
+    (9, 4, 'United Airlines'),
+    (10, 5, 'Oracle'),
+    (11, 5, 'Visa'),
+    (12, 1, 'Delta Airlines');
   `).run();
 
   // Seed Deals
   db.prepare(`
     INSERT OR IGNORE INTO deals (organization_id, account_id, start_date, end_date, value, status) VALUES
-    (1, 1, '2024-01-01', '2024-12-31', 1000000.00, 'Build Proposal'),
-    (1, 2, '2024-03-01', '2025-02-28', 750000.00, 'Pitch Proposal'),
-    (1, 3, '2024-02-01', '2024-12-31', 850000.00, 'Negotiation'),
-    (2, 4, '2024-04-01', '2024-09-30', 150000.00, 'Build Proposal'),
-    (2, 5, '2024-01-01', '2024-12-31', 125000.00, 'Negotiation'),
-    (3, 6, '2024-01-01', '2024-06-30', 75000.00, 'Pitch Proposal');
+    (1, 1, '2026-01-01', '2027-12-31', 1500000.00, 'Build Proposal'),
+    (2, 4, '2026-04-01', '2026-09-30', 950000.00, 'Build Proposal'), 
+    (3, 7, '2026-06-01', '2028-05-31', 1300000.00, 'Build Proposal'),
+    (5, 10, '2026-01-01', '2028-12-31', 2500000.00, 'Build Proposal'),
+    (4, 9, '2025-07-01', '2028-06-30', 1750000.00, 'Build Proposal'),
+    (1, 2, '2026-03-01', '2028-02-28', 1250000.00, 'Pitch Proposal'),
+    (3, 6, '2026-01-01', '2029-06-30', 1750000.00, 'Pitch Proposal'),
+    (4, 9, '2026-03-01', '2030-02-28', 1950000.00, 'Pitch Proposal'),
+    (1, 12, '2026-01-01', '2030-12-31', 2000000.00, 'Pitch Proposal'),
+    (2, 5, '2025-08-01', '2029-05-31', 1850000.00, 'Pitch Proposal'),
+    (1, 3, '2026-02-01', '2031-12-31', 1850000.00, 'Negotiation'),
+    (2, 5, '2026-01-01', '2031-12-31', 2200000.00, 'Negotiation'),
+    (4, 8, '2025-09-01', '2027-08-31', 1100000.00, 'Negotiation'),
+    (5, 11, '2025-07-01', '2029-06-30', 1650000.00, 'Negotiation'),
+    (3, 7, '2025-08-01', '2028-07-31', 1900000.00, 'Negotiation'),
+    (3, 6, '2021-01-01', '2025-12-31', 2100000.00, 'Active'),
+    (4, 8, '2022-01-01', '2026-12-31', 1800000.00, 'Active'),
+    (5, 10, '2023-01-01', '2027-12-31', 2750000.00, 'Active'),
+    (1, 1, '2023-06-01', '2028-05-31', 2300000.00, 'Active'),
+    (2, 4, '2023-03-01', '2029-02-28', 1950000.00, 'Active');
   `).run();
 
   return db;
