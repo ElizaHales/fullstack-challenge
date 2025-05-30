@@ -134,21 +134,41 @@ function App() {
 
   const totalValue = filteredDeals.reduce((sum, deal) => sum + deal.value, 0);
 
+  const statusesToRender = selectedStatus === 'All' 
+    ? ['Build Proposal', 'Pitch Proposal', 'Negotiation']
+    : [selectedStatus];
+
+  const menuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: 300,
+        overflow: 'auto'
+      }
+    }
+  };
+
   return (
     <Container maxWidth="lg">
       <Box my={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <Typography variant="h4" component="h1">Deals Overview</Typography>
-          <Typography variant="h5" color="text.secondary">
-            ${formatValue(totalValue)}
-          </Typography>
-        </Box>
+        <Paper elevation={0} sx={{ p: 2, mb: 4 }}>
+          <Box display="flex" alignItems="center" gap={4}>
+            <Typography variant="h4" component="h1">Deals Overview</Typography>
+            <Typography variant="h5" color="text.secondary">
+              ${formatValue(totalValue)}
+            </Typography>
+          </Box>
+        </Paper>
 
         <Paper elevation={0} sx={{ p: 2, mb: 4 }}>
           <Box display="flex" gap={2}>
             <FormControl sx={{ minWidth: 200 }} variant="outlined">
               <InputLabel>Organization</InputLabel>
-              <Select value={selectedOrg} onChange={handleOrgChange} label="Organization">
+              <Select 
+                value={selectedOrg} 
+                onChange={handleOrgChange} 
+                label="Organization"
+                MenuProps={menuProps}
+              >
                 <MenuItem value="All">All Organizations</MenuItem>
                 {[...new Set(deals.map(deal => deal.organization_name))].map(org => (
                   <MenuItem key={org} value={org}>{org}</MenuItem>
@@ -158,7 +178,12 @@ function App() {
 
             <FormControl sx={{ minWidth: 200 }} variant="outlined">
               <InputLabel>Status</InputLabel>
-              <Select value={selectedStatus} onChange={handleStatusChange} label="Status">
+              <Select 
+                value={selectedStatus} 
+                onChange={handleStatusChange} 
+                label="Status"
+                MenuProps={menuProps}
+              >
                 <MenuItem value="All">All Statuses</MenuItem>
                 {uniqueStatuses.map(status => (
                   <MenuItem key={status} value={status}>{status}</MenuItem>
@@ -168,7 +193,12 @@ function App() {
 
             <FormControl sx={{ minWidth: 200 }} variant="outlined">
               <InputLabel>Year</InputLabel>
-              <Select value={selectedYear} onChange={handleYearChange} label="Year">
+              <Select 
+                value={selectedYear} 
+                onChange={handleYearChange} 
+                label="Year"
+                MenuProps={menuProps}
+              >
                 <MenuItem value="All">All Years</MenuItem>
                 {uniqueYears.map(year => (
                   <MenuItem key={year} value={year}>{year}</MenuItem>
@@ -179,9 +209,7 @@ function App() {
         </Paper>
 
         <Box display="flex" gap={3}>
-          {renderDealsByStatus('Build Proposal')}
-          {renderDealsByStatus('Pitch Proposal')}
-          {renderDealsByStatus('Negotiation')}
+          {statusesToRender.map(status => renderDealsByStatus(status))}
         </Box>
       </Box>
     </Container>
