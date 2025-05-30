@@ -22,6 +22,22 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to the server! 🎉", rows });
 });
 
+app.get("/deals", (req, res) => {
+  const deals = db.prepare(`
+    SELECT 
+      d.*,
+      a.id as account_id,
+      a.name as account_name,
+      o.id as organization_id,
+      o.name as organization_name
+    FROM deals d
+    JOIN accounts a ON d.account_id = a.id 
+    JOIN organizations o ON d.organization_id = o.id
+  `).all();
+  
+  res.json({ deals });
+});
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
