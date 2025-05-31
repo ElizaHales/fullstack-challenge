@@ -7,6 +7,7 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS organizations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      icon TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -19,6 +20,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       organization_id INTEGER NOT NULL,
       name TEXT NOT NULL,
+      icon TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (organization_id) REFERENCES organizations(id)
@@ -51,29 +53,29 @@ function initializeDatabase() {
 
   // Seed Organizations
   db.prepare(`
-    INSERT OR IGNORE INTO organizations (id, name) VALUES
-    (1, 'New York Yankees'),
-    (2, 'Boston Red Sox'),
-    (3, 'Los Angeles Dodgers'),
-    (4, 'Chicago Cubs'),
-    (5, 'San Francisco Giants');
+    INSERT OR IGNORE INTO organizations (id, name, icon) VALUES
+    (1, 'New York Yankees', '/icons/new-york-yankees.png'),
+    (2, 'Boston Red Sox', '/icons/boston-red-sox.png'),
+    (3, 'Los Angeles Dodgers', '/icons/los-angeles-dodgers.png'),
+    (4, 'Chicago Cubs', '/icons/chicago-cubs.png'),
+    (5, 'San Francisco Giants', '/icons/san-francisco-giants.png');
   `).run();
 
   // Seed Accounts
   db.prepare(`
-    INSERT OR IGNORE INTO accounts (id, organization_id, name) VALUES
-    (1, 1, 'Nike'),
-    (2, 1, 'Gatorade'),
-    (3, 1, 'Under Armour'),
-    (4, 2, 'New Balance'),
-    (5, 2, 'Bank of America'),
-    (6, 3, 'American Express'),
-    (7, 3, 'Toyota'),
-    (8, 4, 'Budweiser'),
-    (9, 4, 'United Airlines'),
-    (10, 5, 'Oracle'),
-    (11, 5, 'Visa'),
-    (12, 1, 'Delta Airlines');
+    INSERT OR IGNORE INTO accounts (id, organization_id, name, icon) VALUES
+    (1, 1, 'Nike', '/icons/nike.png'),
+    (2, 1, 'Gatorade', '/icons/gatorade.png'),
+    (3, 1, 'Under Armour', '/icons/under-armour.png'),
+    (4, 2, 'New Balance', '/icons/new-balance.png'),
+    (5, 2, 'Bank of America', '/icons/bank-of-america.png'),
+    (6, 3, 'American Express', '/icons/american-express.png'),
+    (7, 3, 'Toyota', '/icons/toyota.png'),
+    (8, 4, 'Budweiser', '/icons/budweiser.png'),
+    (9, 4, 'United Airlines', '/icons/united-airlines.png'),
+    (10, 5, 'Oracle', '/icons/oracle.png'),
+    (11, 5, 'Visa', '/icons/visa.png'),
+    (12, 1, 'Delta Airlines', '/icons/delta-airlines.png');
   `).run();
 
   // Seed Deals

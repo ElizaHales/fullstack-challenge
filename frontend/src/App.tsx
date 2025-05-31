@@ -12,7 +12,10 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider
+  Divider,
+  Avatar,
+  Checkbox,
+  ListItemText
 } from '@mui/material';
 
 interface Deal {
@@ -25,14 +28,28 @@ interface Deal {
   status: string;
   account_name: string;
   organization_name: string;
+  account_icon: string;
+  organization_icon: string;
 }
 
 function App() {
   const initialLoad = useRef(true);
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<string>('All');
-  const [selectedStatus, setSelectedStatus] = useState<string>('All');
-  const [selectedYear, setSelectedYear] = useState<string>('All');
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+
+  const uniqueStatuses = [...new Set(deals.map(deal => deal.status))];
+  const uniqueYears = [...new Set(deals.flatMap(deal => {
+    const startYear = new Date(deal.start_date).getFullYear();
+    const endYear = new Date(deal.end_date).getFullYear();
+    const years = [];
+    for (let year = startYear; year <= endYear; year++) {
+      years.push(year);
+    }
+    return years;
+  }))].sort();
 
   if (initialLoad.current) {
     const fetchDeals = async () => {
@@ -40,6 +57,20 @@ function App() {
         const response = await fetch('http://localhost:3000/deals');
         const data = await response.json();
         setDeals(data.deals);
+        // Initialize with all values
+        setSelectedOrgs(data.deals.map((d: Deal) => d.organization_name).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i));
+        setSelectedStatuses(Array.from(new Set(data.deals.map((d: Deal) => d.status))) as string[]);
+        setSelectedAccounts(data.deals.map((d: Deal) => d.account_name).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i));
+        const years = [...new Set(data.deals.flatMap((deal: Deal) => {
+          const startYear = new Date(deal.start_date).getFullYear();
+          const endYear = new Date(deal.end_date).getFullYear();
+          const years = [];
+          for (let year = startYear; year <= endYear; year++) {
+            years.push(year.toString());
+          }
+          return years;
+        }))];
+        setSelectedYears(years as string[]);
       } catch (error) {
         console.error('Error fetching deals:', error);
       }
@@ -49,29 +80,44 @@ function App() {
     initialLoad.current = false;
   }
 
-  const handleOrgChange = (event: SelectChangeEvent) => {
-    setSelectedOrg(event.target.value);
+  const handleOrgChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedOrgs(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const handleStatusChange = (event: SelectChangeEvent) => {
-    setSelectedStatus(event.target.value);
+  const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedStatuses(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const handleYearChange = (event: SelectChangeEvent) => {
-    setSelectedYear(event.target.value);
+  const handleAccountChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedAccounts(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const isYearInRange = (deal: Deal, year: number) => {
-    const startYear = new Date(deal.start_date).getFullYear();
-    const endYear = new Date(deal.end_date).getFullYear();
-    return year >= startYear && year <= endYear;
+  const handleYearChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedYears(typeof value === 'string' ? value.split(',') : value);
+  };
+
+  const isYearInRange = (deal: Deal, selectedYears: string[]) => {
+    if (selectedYears.length === uniqueYears.length) return true;
+    
+    const dealStartYear = new Date(deal.start_date).getFullYear();
+    const dealEndYear = new Date(deal.end_date).getFullYear();
+    
+    return selectedYears.some(yearStr => {
+      const year = parseInt(yearStr);
+      return year >= dealStartYear && year <= dealEndYear;
+    });
   };
 
   const filteredDeals = deals.filter(deal => {
-    const matchesOrg = selectedOrg === 'All' || deal.organization_name === selectedOrg;
-    const matchesStatus = selectedStatus === 'All' || deal.status === selectedStatus;
-    const matchesYear = selectedYear === 'All' || isYearInRange(deal, parseInt(selectedYear));
-    return matchesOrg && matchesStatus && matchesYear;
+    const matchesOrg = selectedOrgs.length === 0 || selectedOrgs.includes(deal.organization_name);
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(deal.status);
+    const matchesAccount = selectedAccounts.length === 0 || selectedAccounts.includes(deal.account_name);
+    const matchesYear = isYearInRange(deal, selectedYears);
+    return matchesOrg && matchesStatus && matchesAccount && matchesYear;
   });
 
   const renderDealsByStatus = (status: string) => {
@@ -87,7 +133,7 @@ function App() {
     };
     
     return (
-      <Box width="30%" p={2}>
+      <Box width={{ xs: '100%', sm: 325 }} minWidth={{ sm: 325 }} maxWidth={{ sm: 325 }} p={1}>
         <Card elevation={3}>
           <CardHeader
             title={
@@ -103,7 +149,14 @@ function App() {
           <CardContent>
             {dealsInStatus.map(deal => (
               <Box key={deal.id} display="flex" justifyContent="space-between" mb={1}>
-                <Typography>{deal.account_name}</Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Avatar 
+                    src={deal.account_icon}
+                    alt={deal.account_name}
+                    sx={{ width: 24, height: 24 }}
+                  />
+                  <Typography>{deal.account_name}</Typography>
+                </Box>
                 <Typography color="text.secondary">${formatValue(deal.value)}</Typography>
               </Box>
             ))}
@@ -113,17 +166,6 @@ function App() {
     );
   };
 
-  const uniqueStatuses = [...new Set(deals.map(deal => deal.status))];
-  const uniqueYears = [...new Set(deals.flatMap(deal => {
-    const startYear = new Date(deal.start_date).getFullYear();
-    const endYear = new Date(deal.end_date).getFullYear();
-    const years = [];
-    for (let year = startYear; year <= endYear; year++) {
-      years.push(year);
-    }
-    return years;
-  }))].sort();
-
   const formatValue = (value: number) => {
     return value.toLocaleString('en-US', {
       style: 'decimal',
@@ -132,11 +174,13 @@ function App() {
     });
   };
 
-  const totalValue = filteredDeals.reduce((sum, deal) => sum + deal.value, 0);
+  const statusesToRender = selectedStatuses.length === uniqueStatuses.length
+    ? ['Build Proposal', 'Pitch Proposal', 'Negotiation', 'Active']
+    : selectedStatuses;
 
-  const statusesToRender = selectedStatus === 'All' 
-    ? ['Build Proposal', 'Pitch Proposal', 'Negotiation']
-    : [selectedStatus];
+  const totalValue = filteredDeals
+    .filter(deal => statusesToRender.includes(deal.status))
+    .reduce((sum, deal) => sum + deal.value, 0);
 
   const menuProps = {
     PaperProps: {
@@ -144,15 +188,19 @@ function App() {
         maxHeight: 300,
         overflow: 'auto'
       }
-    }
+    },
+    // Remove default focus on last item
+    autoFocus: false,
+    // Prevent menu from scrolling to selected item
+    disableScrollLock: true
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box my={4}>
+    <Container maxWidth="xl" disableGutters>
+      <Box my={4} mx={2}>
         <Paper elevation={0} sx={{ p: 2, mb: 4 }}>
           <Box display="flex" alignItems="center" gap={4}>
-            <Typography variant="h4" component="h1">Deals Overview</Typography>
+            <Typography variant="h4" component="h1">Deals</Typography>
             <Typography variant="h5" color="text.secondary">
               ${formatValue(totalValue)}
             </Typography>
@@ -160,55 +208,114 @@ function App() {
         </Paper>
 
         <Paper elevation={0} sx={{ p: 2, mb: 4 }}>
-          <Box display="flex" gap={2}>
-            <FormControl sx={{ minWidth: 200 }} variant="outlined">
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
+            <FormControl sx={{ minWidth: 175 }} variant="outlined">
               <InputLabel>Organization</InputLabel>
               <Select 
-                value={selectedOrg} 
-                onChange={handleOrgChange} 
+                multiple
+                value={selectedOrgs}
+                onChange={handleOrgChange}
                 label="Organization"
                 MenuProps={menuProps}
+                renderValue={(selected) => selected.length === [...new Set(deals.map(deal => deal.organization_name))].length 
+                  ? 'All Organizations' 
+                  : `${selected.length} selected`}
               >
-                <MenuItem value="All">All Organizations</MenuItem>
-                {[...new Set(deals.map(deal => deal.organization_name))].map(org => (
-                  <MenuItem key={org} value={org}>{org}</MenuItem>
-                ))}
+                {[...new Set(deals.map(deal => deal.organization_name))].map(org => {
+                  const orgDeal = deals.find(d => d.organization_name === org);
+                  return (
+                    <MenuItem key={org} value={org} dense>
+                      <Checkbox checked={selectedOrgs.includes(org)} size="small" />
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar 
+                          src={orgDeal?.organization_icon}
+                          alt={org}
+                          sx={{ width: 24, height: 24 }}
+                        />
+                        <ListItemText primary={org} primaryTypographyProps={{ variant: 'body2' }} />
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 200 }} variant="outlined">
+            <FormControl sx={{ minWidth: 175 }} variant="outlined">
               <InputLabel>Status</InputLabel>
               <Select 
-                value={selectedStatus} 
-                onChange={handleStatusChange} 
+                multiple
+                value={selectedStatuses}
+                onChange={handleStatusChange}
                 label="Status"
                 MenuProps={menuProps}
+                renderValue={(selected) => selected.length === uniqueStatuses.length 
+                  ? 'All Statuses' 
+                  : `${selected.length} selected`}
               >
-                <MenuItem value="All">All Statuses</MenuItem>
                 {uniqueStatuses.map(status => (
-                  <MenuItem key={status} value={status}>{status}</MenuItem>
+                  <MenuItem key={status} value={status} dense>
+                    <Checkbox checked={selectedStatuses.includes(status)} size="small" />
+                    <ListItemText primary={status} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 200 }} variant="outlined">
+            <FormControl sx={{ minWidth: 175 }} variant="outlined">
+              <InputLabel>Account</InputLabel>
+              <Select 
+                multiple
+                value={selectedAccounts}
+                onChange={handleAccountChange}
+                label="Account"
+                MenuProps={menuProps}
+                renderValue={(selected) => selected.length === [...new Set(deals.map(deal => deal.account_name))].length 
+                  ? 'All Accounts' 
+                  : `${selected.length} selected`}
+              >
+                {[...new Set(deals.map(deal => deal.account_name))].map(account => {
+                  const accountDeal = deals.find(d => d.account_name === account);
+                  return (
+                    <MenuItem key={account} value={account} dense>
+                      <Checkbox checked={selectedAccounts.includes(account)} size="small" />
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar 
+                          src={accountDeal?.account_icon}
+                          alt={account}
+                          sx={{ width: 24, height: 24 }}
+                        />
+                        <ListItemText primary={account} primaryTypographyProps={{ variant: 'body2' }} />
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+
+            <FormControl sx={{ minWidth: 175 }} variant="outlined">
               <InputLabel>Year</InputLabel>
               <Select 
-                value={selectedYear} 
-                onChange={handleYearChange} 
+                multiple
+                value={selectedYears}
+                onChange={handleYearChange}
                 label="Year"
                 MenuProps={menuProps}
+                renderValue={(selected) => selected.length === uniqueYears.length 
+                  ? 'All Years' 
+                  : `${selected.length} selected`}
               >
-                <MenuItem value="All">All Years</MenuItem>
                 {uniqueYears.map(year => (
-                  <MenuItem key={year} value={year}>{year}</MenuItem>
+                  <MenuItem key={year} value={year.toString()} dense>
+                    <Checkbox checked={selectedYears.includes(year.toString())} size="small" />
+                    <ListItemText primary={year.toString()} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Box>
         </Paper>
 
-        <Box display="flex" gap={3}>
+        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} flexWrap={{ sm: 'wrap' }}>
           {statusesToRender.map(status => renderDealsByStatus(status))}
         </Box>
       </Box>

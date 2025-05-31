@@ -28,8 +28,10 @@ app.get("/deals", (req, res) => {
       d.*,
       a.id as account_id,
       a.name as account_name,
+      a.icon as account_icon,
       o.id as organization_id,
-      o.name as organization_name
+      o.name as organization_name,
+      o.icon as organization_icon
     FROM deals d
     JOIN accounts a ON d.account_id = a.id 
     JOIN organizations o ON d.organization_id = o.id
